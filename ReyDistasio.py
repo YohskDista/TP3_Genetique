@@ -16,21 +16,32 @@ pygame.display.set_caption('Exemple')
 screen = pygame.display.get_surface() 
 font = pygame.font.Font(None,30)
 
-try:
-    file = sys.argv[1]
-except:
-    file = None
-
-try:
-    gui = sys.argv[2]
-except:
-    gui = True
-
 class City:
 
     def __init__(self, name, pos):
         self.name = name
         self.pos = pos
+
+cities = []
+
+def parseFile(connections):
+    lines = connections.split("\n")
+
+    for line in lines:
+        word = line.split(" ")
+        pos = (int(word[1]), int(word[2]))
+        nom = word[0]
+        newCity = City(nom, pos)
+        cities.append(newCity)
+
+def ga_solve(file=None, gui=True, maxtime=0):
+    fileCities = open(file, "r")
+    parseFile(fileCities.read())
+
+try:
+    ga_solve(sys.argv[1], True, 1)
+except:
+    file = None
 
 def draw(positions):
     screen.fill(0)
@@ -44,16 +55,11 @@ def draw(positions):
     text = font.render("Nombre: %i" % len(positions), True, font_color)
     textRect = text.get_rect()
     screen.blit(text, textRect)
-    print(file)
     pygame.display.flip()
 
-cities = []
 draw(cities)
 
 collecting = True
-
-def ga_solve(file=None, gui=True, maxtime=0):
-    print("coucou")
 
 while collecting:
     for event in pygame.event.get():
