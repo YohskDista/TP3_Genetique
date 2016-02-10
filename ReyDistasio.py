@@ -3,6 +3,7 @@ from pygame.locals import KEYDOWN, QUIT, MOUSEBUTTONDOWN, K_RETURN, K_ESCAPE
 import sys
 import math
 import itertools
+import time
 
 screen_x = 500
 screen_y = 500
@@ -103,11 +104,15 @@ def draw(positions, individu=None):
 def ga_solve(file=None, gui=True, maxtime=0):
     fileCities = open(file, "r")
     parseFile(fileCities.read())
+    draw(cities)
     permutationsCities = list(itertools.islice(itertools.permutations(cities), 600))
     individus = []
 
-    while True:
+    timeStart = time.time()
+    actualTime = -1
 
+    while actualTime < maxtime:
+        print(actualTime)
         '''Creation des individus'''
         if len(individus) <= 0:
             for permutations in permutationsCities:
@@ -133,8 +138,13 @@ def ga_solve(file=None, gui=True, maxtime=0):
         individus.extend(newIndividus)
         drawParcours(individus)
 
+        if maxtime > 0:
+            actualTime = time.time() - timeStart
+            print(actualTime < maxtime)
+            print("%d = %d " %(actualTime, maxtime))
+
 try:
-    ga_solve(sys.argv[1], True, 1)
+    ga_solve(sys.argv[1], True, 0)
 except:
     file = None
 
