@@ -10,6 +10,8 @@ screen_y = 500
 city_color = [10,10,200] # blue
 city_radius = 3
 
+link_color = [200,10,10] # red
+
 cassure = 4
 
 font_color = [255,255,255] # white
@@ -71,41 +73,11 @@ def mutation(indiv1, indiv2):
 
     return Individu(newParcours)
 
-def ga_solve(file=None, gui=True, maxtime=0):
-    fileCities = open(file, "r")
-    parseFile(fileCities.read())
-    permutationsCities = list(itertools.islice(itertools.permutations(cities), 600))
-    individus = []
+def drawParcours(individus):
+    for individu in individus:
+        draw(individu.orderVisit, individu)
 
-    '''Creation des individus'''
-    for permutations in permutationsCities:
-        i = Individu(permutations)
-        individus.append(i)
-
-    '''Selection des individus (elitisme)'''
-    individus.sort(key = lambda x : x.distance)
-    elite = individus[:len(individus) / 2]
-
-    '''Mutations'''
-    newIndividus = []
-
-    for i in range(0, len(elite), 2):
-        indiv1 = elite[i]
-        if(i+1 < len(elite)):
-            indiv2 = elite[i+1]
-            newIndividus.append(mutation(indiv1, indiv2))
-        else:
-            break
-
-    individus = []
-    individus.extend(newIndividus)
-
-try:
-    ga_solve(sys.argv[1], True, 1)
-except:
-    file = None
-
-def draw(positions):
+def draw(positions, individu=None):
     screen.fill(0)
     font = pygame.font.Font(None,20)
 
@@ -113,13 +85,58 @@ def draw(positions):
         pygame.draw.circle(screen, city_color, pos.pos, city_radius)
         screen.blit(font.render("%s %s" % (pos.name, pos.pos), True, font_color), pos.pos)
 
+    if not(individu is None):
+        for i in range(0, len(individu.orderVisit)):
+            city1 = individu.orderVisit[i]
+            if i+1 < len(individu.orderVisit):
+                city2 = individu.orderVisit[i+1]
+            else:
+                city2 = individu.orderVisit[0]
+            pygame.draw.line(screen, link_color, city1.pos, city2.pos)
+
     font = pygame.font.Font(None,30)
     text = font.render("Nombre: %i" % len(positions), True, font_color)
     textRect = text.get_rect()
     screen.blit(text, textRect)
     pygame.display.flip()
 
-draw(cities)
+def ga_solve(file=None, gui=True, maxtime=0):
+    fileCities = open(file, "r")
+    parseFile(fileCities.read())
+    permutationsCities = list(itertools.islice(itertools.permutations(cities), 600))
+    individus = []
+
+    while True:
+
+        '''Creation des individus'''
+        if len(individus) <= 0:
+            for permutations in permutationsCities:
+                i = Individu(permutations)
+                individus.append(i)
+
+        '''Selection des individus (elitisme)'''
+        individus.sort(key = lambda x : x.distance)
+        elite = individus[:len(individus) / 2]
+
+        '''Mutations'''
+        newIndividus = []
+
+        for i in range(0, len(elite), 2):
+            indiv1 = elite[i]
+            if(i+1 < len(elite)):
+                indiv2 = elite[i+1]
+                newIndividus.append(mutation(indiv1, indiv2))
+            else:
+                break
+
+        individus = []
+        individus.extend(newIndividus)
+        drawParcours(individus)
+
+try:
+    ga_solve(sys.argv[1], True, 1)
+except:
+    file = None
 
 collecting = True
 
