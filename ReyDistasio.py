@@ -4,6 +4,7 @@ import sys
 import math
 import itertools
 import time
+from random import randint
 
 screen_x = 500
 screen_y = 500
@@ -63,7 +64,7 @@ def parseFile(connections):
             newCity = City(nom, pos)
             cities.append(newCity)
 
-def mutation(indiv1, indiv2):
+def croisement(indiv1, indiv2):
     newParcours = []
     for i in range(0, cassure):
         newParcours.append(indiv1.orderVisit[i])
@@ -73,7 +74,17 @@ def mutation(indiv1, indiv2):
             newParcours.append(cityIndiv2)
 
     return Individu(newParcours)
-
+    
+def mutation():
+    mutParcours = []
+    mutParcours = individus
+    v1 = randint(0,len(individus))
+    v2 = randint(0,len(individus))
+    tmp = mutParcours[v1]
+    mutParcours[v1] = mutParcours[v2]
+    mutParcours[v2] = tmp
+    return Individu(mutParcours)
+    
 def drawParcours(individus):
     for individu in individus:
         draw(individu.orderVisit, individu)
@@ -123,24 +134,29 @@ def ga_solve(file=None, gui=True, maxtime=0):
         individus.sort(key = lambda x : x.distance)
         elite = individus[:len(individus) / 2]
 
-        '''Mutations'''
+        '''Croisement'''
         newIndividus = []
 
         for i in range(0, len(elite), 2):
             indiv1 = elite[i]
             if(i+1 < len(elite)):
                 indiv2 = elite[i+1]
-                newIndividus.append(mutation(indiv1, indiv2))
+                newIndividus.append(croisement(indiv1, indiv2))
             else:
                 break
-
+                
+        '''Mutation'''
+        mutationIndividus = []
+        
         individus = []
         individus.extend(newIndividus)
+        #individus = individus.mutation()
+        individus.extend(mutationIndividus)
         drawParcours(individus)
 
         if maxtime > 0:
             actualTime = time.time() - timeStart
-            print(actualTime < maxtime)
+            print(actualTime < maxtime) 
             print("%d = %d " %(actualTime, maxtime))
 
 try:
