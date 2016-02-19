@@ -4,6 +4,7 @@ import sys
 import math
 import itertools
 import time
+from random import randint
 
 cassure = 4
 
@@ -47,7 +48,7 @@ def parseFile(connections):
             newCity = City(nom, pos)
             cities.append(newCity)
 
-def mutation(indiv1, indiv2):
+def croisement(indiv1, indiv2):
     newParcours = []
     for i in range(0, cassure):
         newParcours.append(indiv1.orderVisit[i])
@@ -57,6 +58,15 @@ def mutation(indiv1, indiv2):
             newParcours.append(cityIndiv2)
 
     return Individu(newParcours)
+
+def mutation(individu):
+    v1 = len(individu.orderVisit) - 2
+    v2 = v1 + 1;
+
+    tmp = individu.orderVisit[v2]
+    individu.orderVisit[v2] = individu.orderVisit[v1]
+    individu.orderVisit[v1] = tmp
+    return individu
 
 if __name__ == "__main__":
 
@@ -132,7 +142,7 @@ if __name__ == "__main__":
 def ga_solve(file=None, gui=False, maxtime=0):
     fileCities = open(file, "r")
     parseFile(fileCities.read())
-    nbPopulation = 50
+    nbPopulation = 2000
     #if(gui):
         #draw(cities)
     permutationsCities = list(itertools.islice(itertools.permutations(cities), nbPopulation))
@@ -154,10 +164,22 @@ def ga_solve(file=None, gui=False, maxtime=0):
             indiv1 = individus[i]
             if i+1 < len(individus):
                 indiv2 = individus[i+1]
-                newIndividus.append(mutation(indiv1, indiv2))
+                newIndividus.append(croisement(indiv1, indiv2))
             else:
-                newIndividus.append(mutation(indiv1, individus[0]))
+                newIndividus.append(croisement(indiv1, individus[0]))
 
+        '''Mutation'''
+
+        if(randint(0, 100) < 10):
+            index = randint(0, len(individus)-1)
+            indiv = individus[index]
+            listOrder = []
+            listOrder.extend(indiv.orderVisit)
+            first = listOrder.pop(2)
+            last = listOrder.pop(3)
+            listOrder.insert(2, last)
+            listOrder.insert(3, first)
+            indiv.orderVisit = listOrder
 
         '''Selection des individus (elitisme)'''
         individus.sort(key = lambda x : x.distance)
