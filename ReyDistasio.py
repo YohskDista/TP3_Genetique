@@ -5,23 +5,7 @@ import math
 import itertools
 import time
 
-screen_x = 500
-screen_y = 500
-
-city_color = [10,10,200] # blue
-city_radius = 3
-
-link_color = [200,10,10] # red
-
 cassure = 4
-
-font_color = [255,255,255] # white
-
-pygame.init() 
-window = pygame.display.set_mode((screen_x, screen_y)) 
-pygame.display.set_caption('Exemple') 
-screen = pygame.display.get_surface() 
-font = pygame.font.Font(None,30)
 
 class Individu:
 
@@ -74,102 +58,117 @@ def mutation(indiv1, indiv2):
 
     return Individu(newParcours)
 
-def drawParcours(individus):
-    for individu in individus:
-        draw(individu.orderVisit, individu)
+if __name__ == "__main__":
 
-def draw(positions, individu=None):
-    screen.fill(0)
-    font = pygame.font.Font(None,20)
+    screen_x = 500
+    screen_y = 500
 
-    for pos in positions:
-        pygame.draw.circle(screen, city_color, pos.pos, city_radius)
-        screen.blit(font.render("%s %s" % (pos.name, pos.pos), True, font_color), pos.pos)
+    city_color = [10,10,200] # blue
+    city_radius = 3
 
-    if not(individu is None):
-        for i in range(0, len(individu.orderVisit)):
-            city1 = individu.orderVisit[i]
-            if i+1 < len(individu.orderVisit):
-                city2 = individu.orderVisit[i+1]
-            else:
-                city2 = individu.orderVisit[0]
-            pygame.draw.line(screen, link_color, city1.pos, city2.pos)
+    link_color = [200,10,10] # red
 
+    font_color = [255,255,255] # white
+
+    pygame.init()
+    window = pygame.display.set_mode((screen_x, screen_y))
+    pygame.display.set_caption('Exemple')
+    screen = pygame.display.get_surface()
     font = pygame.font.Font(None,30)
-    text = font.render("Nombre: %i" % len(positions), True, font_color)
+
+    def drawParcours(individus):
+        for individu in individus:
+            draw(individu.orderVisit, individu)
+
+    def draw(positions, individu=None):
+        screen.fill(0)
+        font = pygame.font.Font(None,20)
+
+        for pos in positions:
+            pygame.draw.circle(screen, city_color, pos.pos, city_radius)
+            screen.blit(font.render("%s %s" % (pos.name, pos.pos), True, font_color), pos.pos)
+
+        if not(individu is None):
+            for i in range(0, len(individu.orderVisit)):
+                city1 = individu.orderVisit[i]
+                if i+1 < len(individu.orderVisit):
+                    city2 = individu.orderVisit[i+1]
+                else:
+                    city2 = individu.orderVisit[0]
+                pygame.draw.line(screen, link_color, city1.pos, city2.pos)
+
+        font = pygame.font.Font(None,30)
+        text = font.render("Nombre: %i" % len(positions), True, font_color)
+        textRect = text.get_rect()
+        screen.blit(text, textRect)
+        pygame.display.flip()
+
+    collecting = True
+
+    while collecting:
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                sys.exit(0)
+            elif event.type == KEYDOWN and event.key == K_RETURN:
+                collecting = False
+            elif event.type == MOUSEBUTTONDOWN:
+                name = "v"+str(len(cities))
+                newCity = City(name, pygame.mouse.get_pos())
+                cities.append(newCity)
+                draw(cities)
+
+    screen.fill(0)
+    pygame.draw.lines(screen,city_color,True,cities)
+    text = font.render("Un chemin, pas le meilleur!", True, font_color)
     textRect = text.get_rect()
     screen.blit(text, textRect)
     pygame.display.flip()
 
-def ga_solve(file=None, gui=True, maxtime=0):
+
+    while True:
+        event = pygame.event.wait()
+        if event.type == KEYDOWN: break
+
+def ga_solve(file=None, gui=False, maxtime=0):
     fileCities = open(file, "r")
     parseFile(fileCities.read())
-    draw(cities)
-    permutationsCities = list(itertools.islice(itertools.permutations(cities), 600))
+    nbPopulation = 50
+    #if(gui):
+        #draw(cities)
+    permutationsCities = list(itertools.islice(itertools.permutations(cities), nbPopulation))
     individus = []
+
+    '''Creation des individus'''
+    for permutations in permutationsCities:
+        i = Individu(permutations)
+        individus.append(i)
 
     timeStart = time.time()
     actualTime = -1
 
     while actualTime < maxtime:
-        print(actualTime)
-        '''Creation des individus'''
-        if len(individus) <= 0:
-            for permutations in permutationsCities:
-                i = Individu(permutations)
-                individus.append(i)
+        '''Croisement'''
+        newIndividus = []
+
+        for i in range(0, len(individus), 2):
+            indiv1 = individus[i]
+            if i+1 < len(individus):
+                indiv2 = individus[i+1]
+                newIndividus.append(mutation(indiv1, indiv2))
+            else:
+                newIndividus.append(mutation(indiv1, individus[0]))
+
 
         '''Selection des individus (elitisme)'''
         individus.sort(key = lambda x : x.distance)
-        elite = individus[:len(individus) / 2]
+        elite = individus[:nbPopulation]
 
-        '''Mutations'''
-        newIndividus = []
-
-        for i in range(0, len(elite), 2):
-            indiv1 = elite[i]
-            if(i+1 < len(elite)):
-                indiv2 = elite[i+1]
-                newIndividus.append(mutation(indiv1, indiv2))
-            else:
-                break
-
-        individus = []
-        individus.extend(newIndividus)
-        drawParcours(individus)
+        individus = elite
+        #if(gui):
+            #drawParcours(individus)
 
         if maxtime > 0:
             actualTime = time.time() - timeStart
-            print(actualTime < maxtime)
-            print("%d = %d " %(actualTime, maxtime))
 
-try:
-    ga_solve(sys.argv[1], True, 0)
-except:
-    file = None
-
-collecting = True
-
-while collecting:
-    for event in pygame.event.get():
-        if event.type == QUIT:
-            sys.exit(0)
-        elif event.type == KEYDOWN and event.key == K_RETURN:
-            collecting = False
-        elif event.type == MOUSEBUTTONDOWN:
-            name = "v"+str(len(cities))
-            newCity = City(name, pygame.mouse.get_pos())
-            cities.append(newCity)
-            draw(cities)
-			
-screen.fill(0)
-pygame.draw.lines(screen,city_color,True,cities)
-text = font.render("Un chemin, pas le meilleur!", True, font_color)
-textRect = text.get_rect()
-screen.blit(text, textRect)
-pygame.display.flip()
-
-
-while True:
-	event = pygame.event.wait()
-	if event.type == KEYDOWN: break
+    print(individus[0].distance)
+    return individus[0]
